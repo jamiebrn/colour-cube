@@ -1,1 +1,2 @@
 lib/* linguist-language=text
+include/SFML/** linguist-language=text
