@@ -1,2 +1,1 @@
-lib/* linguist-vendored
-include/SFML/* linguist-vendored
+lib/* include/SFML/* linguist-vendored
