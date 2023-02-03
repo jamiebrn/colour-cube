@@ -16,15 +16,15 @@ private:
 public:
     Player(sf::Vector2f position) : _position(position), _start_position(position) {}
 
-    void update(float delta_time, std::vector<std::unique_ptr<Tube>>& tubes);
+    bool update(float delta_time, std::vector<std::unique_ptr<Tube>> const& tubes);
 
-    void draw(sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window) const;
 
     void jump();
     
     void cycle_colour();
 
-    inline bool get_alive() {return _alive;}
+    inline bool get_alive() const {return _alive;}
 
     void reset();
 
