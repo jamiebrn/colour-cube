@@ -6,14 +6,14 @@ Tube::Tube(float x_pos) {
     _gap = 100 + (rand() % 50);
     _position.y = 50 + _gap + (rand() % (500 - _gap * 2));
 
+    _middle_colour = rand() % 3;
+
     _top_rect.setSize({100, 600});
     _top_rect.setFillColor(Colours::surround);
     _middle_rect.setSize({100 / 3, _gap});
     _middle_rect.setFillColor(Colours::list[_middle_colour]);
     _bottom_rect.setSize({100, 600});
     _bottom_rect.setFillColor(Colours::surround);
-
-    _middle_colour = rand() % 3;
 
 }
 

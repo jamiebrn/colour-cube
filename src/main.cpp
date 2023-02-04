@@ -50,6 +50,11 @@ void handle_click(sf::Event& event, Player& player, std::vector<std::unique_ptr<
         if (event.mouseButton.button == sf::Mouse::Left) {
             player.reset();
             tubes.clear();
+            std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
+            tubes.push_back(std::move(tube));
+            tube.reset();
+            tube = std::make_unique<Tube>(Tube(1250));
+            tubes.push_back(std::move(tube));
             score = 0;
         }
 
@@ -139,8 +144,17 @@ int main() {
                 tube->update(delta_time);
             }
 
+            for (int i = 0; i < tubes.size(); i++) {
+                if (!tubes[i]->get_alive()) {
+                    tubes.erase(tubes.begin() + i--);
+                    std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
+                    tubes.push_back(std::move(tube));
+                }
+            }
+
         }
 
+        std::cout << tubes.size() << "\n";
 
         window.clear(Colours::background);
         
@@ -158,7 +172,7 @@ int main() {
         text.setCharacterSize(32);
         text.setFillColor(Colours::background);
         text.setOrigin({text.getGlobalBounds().width / 2.0, text.getGlobalBounds().height / 2.0});
-        text.setPosition({400, 35});
+        text.setPosition({400, 20});
         window.draw(text);
 
         if (!player.get_alive())

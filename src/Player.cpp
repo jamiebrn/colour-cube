@@ -32,6 +32,7 @@ void Player::reset() {
 
     _position = _start_position;
     _velocity.y = 0;
+    _colour_index = 0;
     _alive = true;
 
 }
