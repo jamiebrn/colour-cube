@@ -1,5 +1,5 @@
 CPP := g++
-CPPFLAGS := -I include/ -L lib/
+CPPFLAGS := -I include/ -L lib/ -mwindows
 LIBFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 SRC_FILES := src/*.cpp
 

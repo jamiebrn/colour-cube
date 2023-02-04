@@ -154,8 +154,6 @@ int main() {
 
         }
 
-        std::cout << tubes.size() << "\n";
-
         window.clear(Colours::background);
         
         draw_surround(window);
@@ -171,7 +169,7 @@ int main() {
         text.setString(std::to_string(score));
         text.setCharacterSize(32);
         text.setFillColor(Colours::background);
-        text.setOrigin({text.getGlobalBounds().width / 2.0, text.getGlobalBounds().height / 2.0});
+        text.setOrigin({text.getGlobalBounds().width / 2.0f, text.getGlobalBounds().height / 2.0f});
         text.setPosition({400, 20});
         window.draw(text);
 

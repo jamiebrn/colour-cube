@@ -10,7 +10,7 @@ Tube::Tube(float x_pos) {
 
     _top_rect.setSize({100, 600});
     _top_rect.setFillColor(Colours::surround);
-    _middle_rect.setSize({100 / 3, _gap});
+    _middle_rect.setSize({100 / 3, static_cast<float>(_gap)});
     _middle_rect.setFillColor(Colours::list[_middle_colour]);
     _bottom_rect.setSize({100, 600});
     _bottom_rect.setFillColor(Colours::surround);
