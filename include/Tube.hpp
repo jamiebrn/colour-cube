@@ -29,6 +29,14 @@ public:
 
     inline bool get_alive() const {return _alive;}
 
+    inline float get_x_pos() const {return _position.x;}
+
+    inline float get_y_pos() const {return _position.y;}
+
+    inline int get_gap() const {return _gap;}
+
+    inline int get_colour_index() const {return _colour_index;}
+
 private:
     bool rect_colliding(sf::RectangleShape rect_one, sf::RectangleShape rect_two) const;
 

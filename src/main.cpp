@@ -3,6 +3,8 @@
 #include <memory>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+
 #include "Tube.hpp"
 #include "Player.hpp"
 #include "Colours.hpp"
@@ -27,66 +29,8 @@ void draw_surround(sf::RenderWindow& window) {
     window.draw(surround);
 
     surround.setPosition({0, 550});
+    surround.setSize({800, 200});
     window.draw(surround);
-
-}
-
-
-void handle_click(sf::Event& event, Player& player, std::vector<std::unique_ptr<Tube>>& tubes, int& score) {
-
-    if (player.get_alive()) {
-
-        if (event.mouseButton.button == sf::Mouse::Right) {
-            player.cycle_colour();
-        }
-
-        if (event.mouseButton.button == sf::Mouse::Left) {
-            player.jump();
-        }
-
-    }
-    else {
-
-        if (event.mouseButton.button == sf::Mouse::Left) {
-            player.reset();
-            tubes.clear();
-            std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
-            tubes.push_back(std::move(tube));
-            tube.reset();
-            tube = std::make_unique<Tube>(Tube(1250));
-            tubes.push_back(std::move(tube));
-            score = 0;
-        }
-
-    }
-
-}
-
-
-void draw_game_over(sf::RenderWindow& window, sf::Font& font, int elapsed_time) {
-
-    sf::RectangleShape background({400, 200});
-    background.setPosition({200, 200});
-    background.setFillColor(Colours::surround);
-    window.draw(background);
-
-    sf::Text text;
-    text.setFont(font);
-    text.setFillColor(Colours::background);
-
-    text.setCharacterSize(48);
-    text.setString("GAME OVER");
-    text.setOrigin({text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2});
-    text.setPosition({400, 240});
-    window.draw(text);
-
-    uint8_t prompt_alpha = std::abs(std::sin(elapsed_time / 400.0)) * 255;
-    text.setCharacterSize(26);
-    text.setString("Left Click to Restart");
-    text.setOrigin({text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2});
-    text.setFillColor({Colours::background.r, Colours::background.g, Colours::background.b, prompt_alpha});
-    text.setPosition({400, 345});
-    window.draw(text);
 
 }
 
@@ -95,7 +39,7 @@ int main() {
 
     srand((unsigned)time(0));
 
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "Colour Cube");
+    sf::RenderWindow window(sf::VideoMode({800, 720}), "Colour Cube");
     set_window_icon(window, "resources/icon.png");
 
     sf::Font font;
@@ -107,7 +51,6 @@ int main() {
     sf::Clock delta_clock;
     sf::Clock running_clock;
 
-    Player player({100, 200});
     std::vector<std::unique_ptr<Tube>> tubes;
 
     std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
@@ -116,7 +59,14 @@ int main() {
     tube = std::make_unique<Tube>(Tube(1250));
     tubes.push_back(std::move(tube));
 
-    int score = 0;
+    int generation = 0;
+    float generation_time = 0;
+    float longest_generation = 0;
+
+    std::vector<Player> ai_players;
+    for (int i = 0; i < 100; i++) {
+        ai_players.push_back(Player({100, 300}));
+    }
 
     while (window.isOpen()) {
 
@@ -127,31 +77,70 @@ int main() {
 
             if (event.type == sf::Event::Closed)
                 window.close();
-            
-            if (event.type == sf::Event::MouseButtonPressed)
-                handle_click(event, player, tubes, score);
 
         }
 
+        generation_time += delta_time;
 
-        if (player.get_alive()) {
+        int players_alive = 0;
+        for (Player& player : ai_players) {
+            if (player.get_alive()) {
+                players_alive++;
+                player.update(delta_time, tubes);
+            }
+        }
 
-            bool got_score = player.update(delta_time, tubes);
-            if (got_score)
-                score++;
+        if (players_alive == 0) {
 
-            for (auto& tube : tubes) {
-                tube->update(delta_time);
+            // Put ai which lasted longest at beginning of array
+            std::sort(ai_players.begin(), ai_players.end(), 
+                [](Player const& a, Player const& b) -> bool
+            { 
+                return a.get_time_alive() > b.get_time_alive(); 
+            });
+
+            longest_generation = std::max(longest_generation, ai_players.at(0).get_time_alive());
+
+            // Get the 10 networks that lasted the longest
+            std::vector<GeneticNeuralNetwork> best_networks;
+            for (int i = 0; i < 10; i++) {
+                best_networks.push_back(ai_players.at(i).get_neural_network());
             }
 
-            for (int i = 0; i < tubes.size(); i++) {
-                if (!tubes[i]->get_alive()) {
-                    tubes.erase(tubes.begin() + i--);
-                    std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
-                    tubes.push_back(std::move(tube));
-                }
+            // "Breed" new networks for each player object, based on best networks
+            // Assign them to player objects
+            for (int i = 0; i < 100; i++) {
+                GeneticNeuralNetwork const& parent_one = best_networks.at(rand() % 10);
+                GeneticNeuralNetwork const& parent_two = best_networks.at(rand() % 10);
+                GeneticNeuralNetwork new_network = parent_one.reproduce(parent_two);
+
+                ai_players.at(i).set_neural_network(new_network);
+                ai_players.at(i).reset();
             }
 
+            // Reset tubes
+            tubes.clear();
+            std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
+            tubes.push_back(std::move(tube));
+            tube.reset();
+            tube = std::make_unique<Tube>(Tube(1250));
+            tubes.push_back(std::move(tube));
+
+            generation++;
+            generation_time = 0;
+
+        }
+
+        for (auto& tube : tubes) {
+            tube->update(delta_time);
+        }
+
+        for (int i = 0; i < tubes.size(); i++) {
+            if (!tubes[i]->get_alive()) {
+                tubes.erase(tubes.begin() + i--);
+                std::unique_ptr<Tube> tube = std::make_unique<Tube>(Tube());
+                tubes.push_back(std::move(tube));
+            }
         }
 
         window.clear(Colours::background);
@@ -162,19 +151,28 @@ int main() {
             tube->draw(window);
         }
 
-        player.draw(window);
+        for (Player& player : ai_players) {
+            if (player.get_alive())
+                player.draw(window);
+        }
 
         sf::Text text;
         text.setFont(font);
-        text.setString(std::to_string(score));
-        text.setCharacterSize(32);
-        text.setFillColor(Colours::background);
-        text.setOrigin({text.getGlobalBounds().width / 2.0f, text.getGlobalBounds().height / 2.0f});
-        text.setPosition({400, 20});
+        text.setPosition({20, 610 - 30});
+        text.setString("Generation: " + std::to_string(generation));
         window.draw(text);
 
-        if (!player.get_alive())
-            draw_game_over(window, font, running_clock.getElapsedTime().asMilliseconds());
+        text.setPosition({20, 650 - 30});
+        text.setString("Time: " + std::to_string(generation_time));
+        window.draw(text);
+
+        text.setPosition({20, 690 - 30});
+        text.setString("Longest time: " + std::to_string(longest_generation));
+        window.draw(text);
+
+        text.setPosition({600, 660});
+        text.setString(std::to_string(players_alive) + " left");
+        window.draw(text);
 
         window.display();
 
